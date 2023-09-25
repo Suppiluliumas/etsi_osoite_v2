@@ -1,8 +1,9 @@
-import React, { useState,useEffect } from "react";
+import React, { useState, useEffect } from "react";
 import { View, TextInput, Button, Alert } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { api_key } from "./keys";
-import * as Location from 'expo-location';
+import * as Location from "expo-location";
+
 export default function App() {
   const [text, setText] = useState("");
   const [coordinates, setCoordinates] = useState({
@@ -11,7 +12,9 @@ export default function App() {
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
-  const [locationRegion,setLocationRegion] = useState();
+  const [locationRegion, setLocationRegion] = useState();
+  const [location, setLocation] = useState();
+
   const handleShow = () => {
     fetch(
       `https://www.mapquestapi.com/geocoding/v1/address?key=${api_key}&location=${text}`
@@ -30,8 +33,8 @@ export default function App() {
         Alert.alert("Error", error.message);
       });
   };
-  useEffect(() => {
 
+  useEffect(() => {
     const region = {
       latitude: coordinates.latitude,
       longitude: coordinates.longitude,
@@ -41,10 +44,27 @@ export default function App() {
     setLocationRegion(region);
   }, [coordinates]);
 
+  useEffect(() => {
+    (async () => {
+      let { status } = await Location.requestForegroundPermissionsAsync();
+      if (status !== "granted") {
+        Alert.alert("No permission to get location");
+        return;
+      }
+      let location = await Location.getCurrentPositionAsync({});
+      setLocation(location);
+      setCoordinates({
+        latitude: location.coords.latitude,
+        longitude: location.coords.longitude,
+        latitudeDelta: 0.0922,
+        longitudeDelta: 0.0421,
+      });
+    })();
+  }, []);
 
   return (
     <View style={{ flex: 1 }}>
-      <MapView style={{ flex: 1 }} region={locationRegion}>
+      <MapView style={{ flex: 1 }} region={coordinates}>
         <Marker
           coordinate={{
             latitude: coordinates.latitude,
