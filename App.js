@@ -1,56 +1,58 @@
-import React, { useState } from "react";
+import React, { useState,useEffect } from "react";
 import { View, TextInput, Button, Alert } from "react-native";
 import MapView, { Marker } from "react-native-maps";
 import { api_key } from "./keys";
-
+import * as Location from 'expo-location';
 export default function App() {
   const [text, setText] = useState("");
-  const [location, setLocation] = useState({
+  const [coordinates, setCoordinates] = useState({
     latitude: 0,
     longitude: 0,
     latitudeDelta: 0.0922,
     longitudeDelta: 0.0421,
   });
-
+  const [locationRegion,setLocationRegion] = useState();
   const handleShow = () => {
     fetch(
       `https://www.mapquestapi.com/geocoding/v1/address?key=${api_key}&location=${text}`
     )
       .then((response) => response.json())
       .then((data) => {
-        if (data.results?.[0]?.locations?.[0]?.latLng) {
-          setLocation({
-            latitude: data.results[0].locations[0].latLng.lat,
-            longitude: data.results[0].locations[0].latLng.lng,
-            latitudeDelta: 0.0922,
-            longitudeDelta: 0.0421,
-          });
-        } else {
-          Alert.alert("Error", "Osoitetta ei löytynyt.");
-        }
+        data.results[0].locations[0].latLng;
+        setCoordinates({
+          latitude: data.results[0].locations[0].latLng.lat,
+          longitude: data.results[0].locations[0].latLng.lng,
+          latitudeDelta: 0.0922,
+          longitudeDelta: 0.0421,
+        });
       })
       .catch((error) => {
         Alert.alert("Error", error.message);
       });
   };
+  useEffect(() => {
+
+    const region = {
+      latitude: coordinates.latitude,
+      longitude: coordinates.longitude,
+      latitudeDelta: coordinates.latitudeDelta,
+      longitudeDelta: coordinates.longitudeDelta,
+    };
+    setLocationRegion(region);
+  }, [coordinates]);
+
 
   return (
     <View style={{ flex: 1 }}>
-      {location.latitude !== 0 && location.longitude !== 0 ? (
-        <MapView
-          style={{ flex: 1 }}
-          initialRegion={location}
-        >
-          <Marker
-            coordinate={{
-              latitude: location.latitude,
-              longitude: location.longitude,
-            }}
-          />
-        </MapView>
-      ) : (
-        <MapView style={{ flex: 1 }} /> 
-      )}
+      <MapView style={{ flex: 1 }} region={locationRegion}>
+        <Marker
+          coordinate={{
+            latitude: coordinates.latitude,
+            longitude: coordinates.longitude,
+          }}
+        />
+      </MapView>
+
       <View>
         <TextInput
           onChangeText={(newText) => setText(newText)}
